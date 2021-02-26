@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>CCCAM</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    </head>
+    <body>
+        <form id="myForm">
+            <input type="text" name="package_id" id="package_id" placeholder="Package Id e.g. 921" required/>
+            <input type="text" name="cuser" id="cuser" placeholder="username" maxlength="10"  required/>
+            <input type="text" name="cpass" id="cpass" placeholder="password" maxlength="10" required />
+            <button type="submit">GET CCCAM</button>
+        </form>
+        <divi id="response"></div>
+    </body>
+</html>
+
+
+
+<script>
+    let url = 'http://localhost:4444'
+    if(window.location.hostname!='localhost') 
+      url=window.location.hostname
+    let socket = io.connect(url);
+    var token;
+    document.getElementById('myForm').addEventListener('submit',e=>{
+        e.preventDefault();
+        console.log('Submitted')
+        socket.emit('create-cccam',{
+            package_id: document.getElementById("package_id").value,
+            cuser: document.getElementById("cuser").value,
+            cpass: document.getElementById("cpass").value,
+            token
+        })
+    });
+    socket.on("response", (data) => {
+        let el = document.createElement("div");
+        el.innerHTML = JSON.stringify(data);
+        console.log(data);
+        document.getElementById('response').appendChild(el);
+    });
+    socket.on("error", (data) => {
+        let el = document.createElement("div");
+        el.innerHTML = JSON.stringify(data);        console.log('ERR in try',data);
+        document.getElementById('response').appendChild(el);
+    });
+    
+    socket.on("usernameNotAvailable", (data) => {
+        token=data;
+        document.getElementById('package_id').disabled=true;
+        let el = document.createElement("div");
+        el.style.color='red';
+        el.innerHTML = 'USERNAME NOT AVAILABLE ENTER NEW USERNAME';
+        console.log('ERR in try',data);
+        document.getElementById('response').appendChild(el);
+    });
+    socket.on("updatetoken", (data) => {
+        token=data;
+        let el = document.createElement("div");
+        el.innerHTML = 'token updated';
+        document.getElementById('response').appendChild(el);
+    });
+
+    socket.on("cccam", (data) => {
+        let el = document.createElement("div");
+        el.style.backgroundColor='lightgreen';
+        el.innerHTML = `HOST: ${data.cccam.host} <br> PORT: ${data.cccam.port} <br> USERNAME: ${data.cccam.username} <br> PASSWORD: ${data.cccam.password} <br> EXPIRY: ${data.cccam.expiry} `;
+        document.getElementById('response').appendChild(el);
+    });
+    
+
+    // var startTime;
+
+    // setInterval(function () {
+    //     startTime = Date.now();
+    //     // console.log("sending:", startTime);
+    //     socket.emit("pingg", { startTime });
+    // }, 2000);
+
+    // socket.on("pongg", (data) => {
+    //     latency = Date.now() - data.startTime;
+    //     console.log(latency);
+    //     // console.log("Received:", Date.now(), "ping", latency);
+    // });
+</script>
